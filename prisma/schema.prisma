@@ -1,0 +1,84 @@
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-musl", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ROLE {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Users {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  username          String
+  password          String
+  role              ROLE      @default(USER)
+  profile_picture   String?
+  total_game_played Int       @default(0)
+
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now()) @updatedAt
+
+  games             Games[]
+  liked_games       LikedGames[]
+}
+
+model GameTemplates {
+  id                    String    @id @default(uuid())
+  name                  String
+  slug                  String    @unique
+  description           String
+  logo                  String?
+  is_time_limit_based   Boolean   @default(false)
+  is_life_based         Boolean   @default(false)
+
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @default(now()) @updatedAt
+
+  games                 Games[]
+  
+  @@index([slug, name])
+}
+
+model Games {
+  id                String        @id @default(uuid())
+  name              String        @unique
+  description       String?
+  thumbnail_image   String
+  game_template_id  String
+  creator_id        String
+  is_published      Boolean       @default(false)
+  game_json         Json
+  total_played      Int           @default(0)
+
+  creator           Users         @relation(fields: [creator_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  game_template     GameTemplates @relation(fields: [game_template_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @default(now()) @updatedAt
+
+  liked             LikedGames[]
+
+  @@index([name])
+}
+
+model LikedGames {
+  id                String        @id @default(uuid())
+  user_id           String
+  game_id           String
+
+  user              Users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  game              Games         @relation(fields: [game_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @default(now()) @updatedAt
+
+  @@unique([user_id, game_id])
+}

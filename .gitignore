@@ -1,0 +1,42 @@
+# dependencies (bun install)
+docker
+node_modules
+uploads
+
+# output
+out
+dist
+*.tgz
+server
+server.exe
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
+prisma/seeder/data/users-prod.data.csv
+.env
+.env.development
+.env.production
+.env.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
+
+/generated/prisma
+
+uploads

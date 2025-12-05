@@ -1,0 +1,78 @@
+{
+  "name": "bp-pemrograman-website-be-2025",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend for Website Programming Final Project - WordIT",
+  "type": "module",
+  "main": "src/main.ts",
+  "scripts": {
+    "build": "bun build src/main.ts --target bun --outdir ./dist",
+    "build:binary": "bun build --compile --target bun --outfile server ./src/main.ts",
+    "db:dev": "dotenv -e .env.development -- bun migrate:dev && bun seed:dev",
+    "db:prod": "dotenv -e .env.production -- bun migrate:dev && bun seed:dev",
+    "docker:down:dev": "dotenv -e .env.development -- docker compose down",
+    "docker:down:prod": "dotenv -e .env.production -- docker compose down",
+    "docker:up:dev": "dotenv -e .env.development -- docker compose up -d",
+    "docker:up:prod": "dotenv -e .env.production -- docker compose up -d",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "generate": "bunx prisma generate",
+    "lint": "eslint . --ext .js,.ts,.jsx,.tsx --max-warnings=0",
+    "lint:fix": "eslint . --ext .js,.ts,.jsx,.tsx --max-warnings=0 --fix",
+    "migrate:dev": "dotenv -e .env.development -- prisma migrate dev --schema ./prisma/schema.prisma",
+    "migrate:dev:reset": "dotenv -e .env.development -- prisma migrate reset --schema ./prisma/schema.prisma",
+    "migrate:prod": "dotenv -e .env.production -- prisma migrate deploy --schema ./prisma/schema.prisma",
+    "migrate:prod:reset": "dotenv -e .env.production -- prisma migrate reset --schema ./prisma/schema.prisma",
+    "prepare": "husky",
+    "seed:dev": "dotenv -e .env.development -- bun ./prisma/seeder/seeder.ts",
+    "seed:prod": "dotenv -e .env.production -- bun ./prisma/seeder/seeder.ts",
+    "sort:package": "sort-package-json",
+    "start:deploy:dev": "dotenv -e .env.development -- ./server",
+    "start:deploy:prod": "dotenv -e .env.production -- ./server",
+    "start:dev": "dotenv -e .env.development -- bun run --watch src/main.ts"
+  },
+  "lint-staged": {
+    "package.json": "bun sort:package",
+    "src/**/*.ts": [
+      "bun lint"
+    ]
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.0",
+    "cors": "^2.8.5",
+    "csvtojson": "^2.0.14",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "http-status-codes": "^2.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "uuid": "^13.0.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "@types/qs": "^6.14.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
+    "dotenv-cli": "^11.0.0",
+    "eslint": "8.57.1",
+    "eslint-config-code-style-lint-ts": "^3.1.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unicorn": "52.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "prettier": "^3.6.2",
+    "prisma": "^6.19.0",
+    "sort-package-json": "^3.4.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

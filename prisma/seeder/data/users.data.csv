@@ -1,0 +1,5 @@
+id,email,username,password,role
+8b62b33f-4575-42d3-85ce-27c34122143a,super-admin-fp@pweb-it.id,"Kak Super Admin",Password##2025!,SUPER_ADMIN
+cf71967c-be73-4455-b3d8-949ffb36c148,admin-fp@pweb-it.id, "Atmin IT",Password##2025!,ADMIN
+00bb6ad1-2e70-41ca-9713-cc4c70f0d30a,user1-fp@pweb-it.id, "User 1",Password##2025!,USER
+2a65a9ec-8479-40d9-9d50-9557854060aa,user2-fp@pweb-it.id, "User 2",Password##2025!,USER

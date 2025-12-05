@@ -1,0 +1,13 @@
+game_id,question_index,answer_text,is_correct
+d13a76b0-b779-45ce-b00e-0bcf3957b149,0,"A. Budi",false
+d13a76b0-b779-45ce-b00e-0bcf3957b149,0,"B. Bambang",true
+d13a76b0-b779-45ce-b00e-0bcf3957b149,0,"C. Kucing",false
+d13a76b0-b779-45ce-b00e-0bcf3957b149,0,"D. Kambing",false
+d13a76b0-b779-45ce-b00e-0bcf3957b149,1,"A. Budi",false
+d13a76b0-b779-45ce-b00e-0bcf3957b149,1,"B. Bambang",true
+d13a76b0-b779-45ce-b00e-0bcf3957b149,1,"C. Kucing",false
+d13a76b0-b779-45ce-b00e-0bcf3957b149,1,"D. Kambing",false
+d13a76b0-b779-45ce-b00e-0bcf3957b149,2,"A. Budi",false
+d13a76b0-b779-45ce-b00e-0bcf3957b149,2,"B. Bambang",true
+d13a76b0-b779-45ce-b00e-0bcf3957b149,2,"C. Kucing",false
+d13a76b0-b779-45ce-b00e-0bcf3957b149,2,"D. Kambing",false

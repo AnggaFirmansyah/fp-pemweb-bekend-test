@@ -1,0 +1,2 @@
+id,game_template_id,creator_id,name,description,thumbnail_image,is_publish_immediately,is_question_randomized,is_answer_randomized,score_per_question
+d13a76b0-b779-45ce-b00e-0bcf3957b149,d7d8399a-8a98-44f3-a665-ed03a6b9a5d0,8b62b33f-4575-42d3-85ce-27c34122143a,"Quiz Super Rumit","Lorem Ipsum","Bob.png",true,true,false,33

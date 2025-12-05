@@ -1,0 +1,22 @@
+services:
+  database:
+    container_name: fp-database
+    restart: unless-stopped
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${POSTGRES_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - ./docker/volumes/:/var/lib/postgresql/data
+    networks:
+      - fp-network
+
+networks:
+  fp-network:
+    driver: bridge
+
+volumes:
+  mysqldata:
