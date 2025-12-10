@@ -1,2 +1,2 @@
 export * from './quiz.interface';
-export * from './math-generator.interface'; // Tambahkan ini
+export * from './math-generator.interface'; // <--- Tambahkan ini!

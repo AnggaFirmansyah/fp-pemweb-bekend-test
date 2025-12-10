@@ -1,12 +1,14 @@
+export interface IMathGeneratorSettings {
+  operation: 'addition' | 'subtraction' | 'multiplication' | 'division';
+  min_number: number;
+  max_number: number;
+  question_count: number;
+}
+
 export interface IMathGeneratorJson {
-  settings: {
-    operation: 'addition' | 'subtraction' | 'multiplication' | 'division';
-    min_number: number;
-    max_number: number;
-    question_count: number;
-  };
+  settings: IMathGeneratorSettings;
+  score_per_question: number;
   questions: IMathQuestion[];
-  score_per_question: number; // Simpan score config juga
 }
 
 export interface IMathQuestion {

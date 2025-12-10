@@ -28,7 +28,6 @@ ec1fdf17-7935-4da9-a346-7bfd887fb56c,rank-order,"Rank Order","Lorem",list-collap
 6a7e3503-6faa-4d61-ab14-01b868fd1c70,watch-and-memorize,"Watch and Memorize","Lorem",brain,true,false
 2614daa4-efec-46b2-a95a-ee5651578465,word-magnet,"Word Magnet","Lorem",magnet,false,false
 6dd614dc-bdcd-4cf9-a8d4-a98f497b39ec,flying-fruit,"Flying Fruit","Lorem",citrus,false,true
-474d18da-c038-4ca6-b6b2-2c88fff6a006,math-generator,"Math Generator","Lorem",sigma,false,false
 b8b126af-011f-49f8-8616-ec8ed9180e33,pair-or-no-pair,"pair or No Pair","Lorem",grid-2x2-x,false,false
 ba2f6e6a-ca73-472f-a227-69a6e861f754,speed-sorting,"Speed Sorting","Lorem",clock-arrow-down,false,false
 2bdeb39e-9041-4997-992b-eeeb82f03894,spell-the-word,"Spell the Word","Lorem",megaphone,false,false
@@ -37,4 +36,4 @@ c3d8a6c3-0db2-4b01-ae77-31e8af182784,jeopardy,"Jeopardy","Lorem",spotlight,false
 06415ea7-d932-4b10-a285-f53201edf108,puzzle,"Puzzle","Lorem",puzzle,false,false
 9fdcf0f2-9b09-4cac-b648-b349c5c07388,sliding-puzzle,"Sliding Puzzle","Lorem",images,false,false
 a600b3e5-c26e-4780-992f-22ba0d19e0a3,type-speed,"Type Speed","Lorem",keyboard,true,false
-c0c9d7d8-1234-4567-89ab-cdef01234567,math-generator,"Math Generator","Generate random math problems based on selected topics",calculator,false,false
+474d18da-c038-4ca6-b6b2-2c88fff6a006,math-generator,"Math Generator","Generate random math problems based on selected topics",calculator,false,false

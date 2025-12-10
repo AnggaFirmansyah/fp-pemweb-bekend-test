@@ -18,13 +18,14 @@ export const gameTemplateSeed = async () => {
   try {
     console.log('🌱 Seed game templates');
 
+    // Menggunakan Upsert agar tidak error saat seed ulang
     const datas: IGameTemplates[] = await csv().fromFile(
       resolveSync('../data/' + 'game-templates.data.csv', __dirname),
     );
 
     for (const data of datas) {
       await prisma.gameTemplates.upsert({
-        where: { id: data.id },
+        where: { slug: data.slug }, // Kunci unik menggunakan slug
         create: {
           id: data.id,
           slug: data.slug,
@@ -35,7 +36,6 @@ export const gameTemplateSeed = async () => {
           is_life_based: data.is_life_based === 'true',
         },
         update: {
-          slug: data.slug,
           name: data.name,
           description: data.description,
           logo: data.logo,
@@ -46,7 +46,6 @@ export const gameTemplateSeed = async () => {
     }
   } catch (error) {
     console.log(`❌ Error in game templates. ${error}`);
-
     throw error;
   }
 };

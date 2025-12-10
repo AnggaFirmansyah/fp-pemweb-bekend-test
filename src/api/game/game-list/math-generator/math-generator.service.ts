@@ -7,25 +7,27 @@ import {
   type IMathGeneratorJson,
   type IMathQuestion,
   prisma,
-} from '@/common';
+} from '@/common'; // Ini akan error jika langkah no 1 belum dilakukan
 import { FileManager } from '@/utils';
 
 import { type ICheckMathAnswer, type ICreateMathGenerator } from './schema';
 
 export abstract class MathGeneratorService {
-  // Pastikan slug ini ada di database (prisma/seeder/data/game-templates.data.csv)
+  // Pastikan slug ini SAMA PERSIS dengan di database (game-templates.data.csv)
   private static readonly SLUG = 'math-generator';
 
   static async createGame(data: ICreateMathGenerator, user_id: string) {
+    // Cek nama game unik
     const exist = await prisma.games.findUnique({ where: { name: data.name } });
     if (exist) throw new ErrorResponse(StatusCodes.BAD_REQUEST, 'Game name already exists');
 
+    // Ambil Template ID
     const template = await prisma.gameTemplates.findUnique({
       where: { slug: this.SLUG },
     });
-    if (!template) throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Template Math Generator not found');
+    if (!template) throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Template Math Generator not found. Did you run seed?');
 
-    // Generate Soal Server-Side
+    // Generate Soal
     const generatedQuestions = this.generateQuestions(
       data.operation,
       data.min_number,
@@ -35,10 +37,13 @@ export abstract class MathGeneratorService {
 
     const newGameId = v4();
     let thumbnailPath = '';
+    
+    // Upload gambar jika ada
     if (data.thumbnail_image) {
       thumbnailPath = await FileManager.upload(`game/math/${newGameId}`, data.thumbnail_image);
     }
 
+    // Susun JSON Config
     const gameJson: IMathGeneratorJson = {
       settings: {
         operation: data.operation,
@@ -50,6 +55,7 @@ export abstract class MathGeneratorService {
       questions: generatedQuestions,
     };
 
+    // Simpan ke DB
     return await prisma.games.create({
       data: {
         id: newGameId,
@@ -83,9 +89,10 @@ export abstract class MathGeneratorService {
       throw new ErrorResponse(StatusCodes.FORBIDDEN, 'Access denied');
     }
 
+    // Casting JSON
     const json = game.game_json as unknown as IMathGeneratorJson;
 
-    // Bersihkan data sensitif (kunci jawaban) sebelum dikirim ke frontend
+    // Mapping agar frontend mudah menampilkan (index & text)
     const cleanQuestions = json.questions.map((q, index) => ({
       index,
       question_text: q.question_text,
@@ -98,6 +105,7 @@ export abstract class MathGeneratorService {
       description: game.description,
       thumbnail_image: game.thumbnail_image,
       score_per_question: json.score_per_question,
+      settings: json.settings,
       questions: cleanQuestions,
     };
   }
@@ -123,7 +131,7 @@ export abstract class MathGeneratorService {
         };
       }
 
-      // Validasi jawaban (string comparison)
+      // Logic: Bandingkan string jawaban yang dipilih dengan kunci jawaban
       const isCorrect = actualQuestion.correct_answer === ans.selected_answer;
       if (isCorrect) correctCount++;
 
@@ -134,20 +142,19 @@ export abstract class MathGeneratorService {
       };
     });
 
-    // Hitung skor total
-    const totalScore = correctCount * json.score_per_question;
     const maxScore = json.questions.length * json.score_per_question;
+    const score = json.questions.length > 0 ? (correctCount / json.questions.length) * 100 : 0;
 
     return {
-      score: totalScore,
-      max_score: maxScore,
+      score: Math.round(score * 100) / 100,
       correct_count: correctCount,
       total_questions: json.questions.length,
+      max_score: maxScore,
       results,
     };
   }
 
-  // --- Logic Generator Soal ---
+  // --- Helper Logic Generator (Sama dengan Frontend) ---
   private static generateQuestions(
     operation: 'addition' | 'subtraction' | 'multiplication' | 'division',
     min: number,
@@ -157,65 +164,63 @@ export abstract class MathGeneratorService {
     const questions: IMathQuestion[] = [];
 
     for (let i = 0; i < count; i++) {
-      let num1 = 0, num2 = 0, result = 0;
-      let symbol = '';
+      let num1 = this.randomInt(min, max);
+      let num2 = this.randomInt(min, max);
+      let answer = 0;
+      let display = '';
 
       switch (operation) {
         case 'addition':
-          num1 = this.randomInt(min, max);
-          num2 = this.randomInt(min, max);
-          result = num1 + num2;
-          symbol = '+';
+          answer = num1 + num2;
+          display = `${num1} + ${num2}`;
           break;
         case 'subtraction':
-          // Pastikan hasil tidak negatif
-          num1 = this.randomInt(min, max);
-          num2 = this.randomInt(min, num1);
-          result = num1 - num2;
-          symbol = '-';
+          if (num1 < num2) [num1, num2] = [num2, num1]; // Swap biar positif
+          answer = num1 - num2;
+          display = `${num1} - ${num2}`;
           break;
         case 'multiplication':
-          // Batasi angka agar hasil tidak terlalu besar
-          const limit = Math.max(min, 12); 
-          num1 = this.randomInt(min, limit); 
-          num2 = this.randomInt(min, limit);
-          result = num1 * num2;
-          symbol = '×';
+          answer = num1 * num2;
+          display = `${num1} × ${num2}`;
           break;
         case 'division':
-          // Logika pembagian bersih (tanpa koma)
-          num2 = this.randomInt(2, 10); // Pembagi kecil
-          result = this.randomInt(min, max); // Hasil jawaban
-          num1 = num2 * result; // Angka yang dibagi
-          symbol = '÷';
+          // Agar hasil pembagian bulat: num1 = num2 * result
+          answer = num2; // Kita jadikan num2 sebagai jawaban
+          num1 = num2 * this.randomInt(min, max); // num1 kita sesuaikan
+          display = `${num1} ÷ ${num2}`;
           break;
       }
 
-      // Generate Pengecoh (Distractors)
-      const options = new Set<number>();
-      options.add(result);
+      // Generate Distractors (Pengecoh)
+      const options = new Set<string>();
+      options.add(answer.toString());
       
-      let attempt = 0;
-      while (options.size < 4 && attempt < 20) {
+      let safety = 0;
+      while (options.size < 4 && safety < 50) {
         const offset = this.randomInt(1, 10) * (Math.random() < 0.5 ? 1 : -1);
-        const wrong = result + offset;
-        if (wrong >= 0 && wrong !== result) options.add(wrong);
-        attempt++;
+        const wrong = answer + offset;
+        // Pastikan tidak negatif dan tidak duplikat
+        if (wrong >= 0 && wrong !== answer) options.add(wrong.toString());
+        safety++;
       }
       
       // Fallback jika loop macet
-      while(options.size < 4) options.add(this.randomInt(0, max + 20));
+      while(options.size < 4) options.add((this.randomInt(0, max + 20) + options.size).toString());
+
+      // Shuffle options
+      const optionsArray = Array.from(options).sort(() => Math.random() - 0.5);
 
       questions.push({
-        question_text: `${num1} ${symbol} ${num2}`,
-        correct_answer: result.toString(),
-        options: Array.from(options).sort(() => Math.random() - 0.5).map(String),
+        question_text: `${display} = ?`,
+        correct_answer: answer.toString(),
+        options: optionsArray,
       });
     }
     return questions;
   }
 
   private static randomInt(min: number, max: number) {
+    if (min > max) return min;
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 }

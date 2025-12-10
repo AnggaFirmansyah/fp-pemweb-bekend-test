@@ -1,4 +1,3 @@
-// 1. Tambahkan import type Response dan NextFunction
 import { type NextFunction, type Request, type Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
@@ -25,9 +24,9 @@ export const MathGeneratorController = Router()
       schema: CreateMathGeneratorSchema,
       file_fields: [{ name: 'thumbnail_image', maxCount: 1 }],
     }),
-    // 2. Tambahkan tipe eksplisit untuk response dan next
+    // PERBAIKAN: Ubah {} kedua menjadi any agar kompatibel dengan SuccessResponse
     async (
-      request: AuthedRequest<{}, {}, ICreateMathGenerator>,
+      request: AuthedRequest<{}, any, ICreateMathGenerator>,
       response: Response,
       next: NextFunction,
     ) => {
@@ -48,10 +47,9 @@ export const MathGeneratorController = Router()
     },
   )
   .get(
-    '/:game_id/play',
-    // 3. Tambahkan tipe eksplisit di sini juga
+    '/:game_id/play/public',
     async (
-      request: Request, 
+      request: Request<{ game_id: string }>, 
       response: Response, 
       next: NextFunction
     ) => {
@@ -71,12 +69,37 @@ export const MathGeneratorController = Router()
       }
     }
   )
+  .get(
+    '/:game_id/play/private',
+    validateAuth({}),
+    async (
+      request: AuthedRequest<{ game_id: string }>,
+      response: Response,
+      next: NextFunction,
+    ) => {
+      try {
+        const result = await MathGeneratorService.getGamePlay(
+          request.params.game_id,
+          true, // Dianggap public view tapi via private route
+          request.user!.user_id,
+          request.user!.role,
+        );
+        const res = new SuccessResponse(
+          StatusCodes.OK,
+          'Game data fetched',
+          result,
+        );
+        return response.status(res.statusCode).json(res.json());
+      } catch (error) {
+        return next(error);
+      }
+    }
+  )
   .post(
     '/:game_id/check',
     validateBody({ schema: CheckMathAnswerSchema }),
-    // 4. Dan di sini
     async (
-      request: AuthedRequest<{ game_id: string }, {}, ICheckMathAnswer>,
+      request: Request<{ game_id: string }, {}, ICheckMathAnswer>,
       response: Response,
       next: NextFunction,
     ) => {

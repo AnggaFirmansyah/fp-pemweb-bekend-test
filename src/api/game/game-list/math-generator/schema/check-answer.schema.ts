@@ -4,8 +4,8 @@ export const CheckMathAnswerSchema = z.object({
   answers: z
     .array(
       z.object({
-        question_index: z.number().min(0),
-        selected_answer: z.string(), // Kita pakai string agar fleksibel
+        question_index: z.number().int().min(0),
+        selected_answer: z.string(), // String karena opsi jawaban dikirim sebagai string
       }),
     )
     .min(1),
