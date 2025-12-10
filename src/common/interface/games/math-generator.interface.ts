@@ -1,18 +1,16 @@
 export interface IMathGeneratorJson {
-  config: {
+  settings: {
+    operation: 'addition' | 'subtraction' | 'multiplication' | 'division';
+    min_number: number;
+    max_number: number;
     question_count: number;
-    allow_addition: boolean;
-    allow_subtraction: boolean;
-    allow_multiplication: boolean;
-    allow_division: boolean;
-    min_range: number;
-    max_range: number;
   };
   questions: IMathQuestion[];
+  score_per_question: number; // Simpan score config juga
 }
 
 export interface IMathQuestion {
   question_text: string;
-  options: string[]; // Pilihan jawaban (misal A, B, C, D)
-  correct_answer: string; // Jawaban benar
+  options: string[];
+  correct_answer: string;
 }

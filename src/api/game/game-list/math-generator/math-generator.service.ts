@@ -13,6 +13,7 @@ import { FileManager } from '@/utils';
 import { type ICheckMathAnswer, type ICreateMathGenerator } from './schema';
 
 export abstract class MathGeneratorService {
+  // Pastikan slug ini ada di database (prisma/seeder/data/game-templates.data.csv)
   private static readonly SLUG = 'math-generator';
 
   static async createGame(data: ICreateMathGenerator, user_id: string) {
@@ -24,16 +25,12 @@ export abstract class MathGeneratorService {
     });
     if (!template) throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Template Math Generator not found');
 
+    // Generate Soal Server-Side
     const generatedQuestions = this.generateQuestions(
-      data.question_count,
-      data.min_range,
-      data.max_range,
-      {
-        add: data.allow_addition,
-        sub: data.allow_subtraction,
-        mul: data.allow_multiplication,
-        div: data.allow_division,
-      }
+      data.operation,
+      data.min_number,
+      data.max_number,
+      data.question_count
     );
 
     const newGameId = v4();
@@ -43,15 +40,13 @@ export abstract class MathGeneratorService {
     }
 
     const gameJson: IMathGeneratorJson = {
-      config: {
+      settings: {
+        operation: data.operation,
+        min_number: data.min_number,
+        max_number: data.max_number,
         question_count: data.question_count,
-        min_range: data.min_range,
-        max_range: data.max_range,
-        allow_addition: data.allow_addition,
-        allow_subtraction: data.allow_subtraction,
-        allow_multiplication: data.allow_multiplication,
-        allow_division: data.allow_division,
       },
+      score_per_question: data.score_per_question,
       questions: generatedQuestions,
     };
 
@@ -68,74 +63,6 @@ export abstract class MathGeneratorService {
       },
       select: { id: true },
     });
-  }
-
-  private static generateQuestions(
-    count: number,
-    min: number,
-    max: number,
-    ops: { add: boolean; sub: boolean; mul: boolean; div: boolean }
-  ): IMathQuestion[] {
-    const questions: IMathQuestion[] = [];
-    const activeOps: string[] = [];
-    if (ops.add) activeOps.push('+');
-    if (ops.sub) activeOps.push('-');
-    if (ops.mul) activeOps.push('x');
-    if (ops.div) activeOps.push(':');
-
-    if (activeOps.length === 0) activeOps.push('+');
-
-    for (let i = 0; i < count; i++) {
-      const operator = activeOps[Math.floor(Math.random() * activeOps.length)];
-      let num1 = 0; 
-      let num2 = 0; 
-      let result = 0;
-
-      switch (operator) {
-        case '+':
-          num1 = this.randomInt(min, max);
-          num2 = this.randomInt(min, max);
-          result = num1 + num2;
-          break;
-        case '-':
-          num1 = this.randomInt(min, max);
-          num2 = this.randomInt(min, num1);
-          result = num1 - num2;
-          break;
-        case 'x':
-          num1 = this.randomInt(min, Math.max(12, Math.floor(max / 2))); 
-          num2 = this.randomInt(min, 12);
-          result = num1 * num2;
-          break;
-        case ':':
-          num2 = this.randomInt(2, 12);
-          result = this.randomInt(min, max);
-          num1 = num2 * result;
-          break;
-      }
-
-      const options = new Set<number>();
-      options.add(result);
-      let safetyCounter = 0;
-      while (options.size < 4 && safetyCounter < 50) {
-        const offset = this.randomInt(-10, 10);
-        const distractor = result + offset;
-        if (distractor >= 0 && distractor !== result) options.add(distractor);
-        safetyCounter++;
-      }
-
-      questions.push({
-        question_text: `${num1} ${operator} ${num2} = ?`,
-        correct_answer: result.toString(),
-        options: Array.from(options).sort(() => Math.random() - 0.5).map(String),
-      });
-    }
-    return questions;
-  }
-
-  private static randomInt(min: number, max: number) {
-    if (min > max) return min;
-    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   static async getGamePlay(game_id: string, is_public: boolean, user_id?: string, role?: ROLE) {
@@ -158,6 +85,7 @@ export abstract class MathGeneratorService {
 
     const json = game.game_json as unknown as IMathGeneratorJson;
 
+    // Bersihkan data sensitif (kunci jawaban) sebelum dikirim ke frontend
     const cleanQuestions = json.questions.map((q, index) => ({
       index,
       question_text: q.question_text,
@@ -168,11 +96,12 @@ export abstract class MathGeneratorService {
       id: game.id,
       name: game.name,
       description: game.description,
+      thumbnail_image: game.thumbnail_image,
+      score_per_question: json.score_per_question,
       questions: cleanQuestions,
     };
   }
 
-  // --- PERBAIKAN UTAMA ADA DI SINI ---
   static async checkAnswer(game_id: string, data: ICheckMathAnswer) {
     const game = await prisma.games.findUnique({
       where: { id: game_id },
@@ -181,21 +110,20 @@ export abstract class MathGeneratorService {
     if (!game) throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
 
     const json = game.game_json as unknown as IMathGeneratorJson;
-    
     let correctCount = 0;
     
-    // Kita berikan tipe eksplisit pada parameter 'ans' agar TypeScript tidak bingung
-    const results = data.answers.map((ans: { question_index: number; selected_answer: string }) => {
+    const results = data.answers.map((ans) => {
       const actualQuestion = json.questions[ans.question_index];
       
       if (!actualQuestion) {
         return {
           question_index: ans.question_index,
           is_correct: false,
-          correct_answer: 'Invalid Question',
+          correct_answer: 'Invalid Index',
         };
       }
 
+      // Validasi jawaban (string comparison)
       const isCorrect = actualQuestion.correct_answer === ans.selected_answer;
       if (isCorrect) correctCount++;
 
@@ -206,13 +134,88 @@ export abstract class MathGeneratorService {
       };
     });
 
-    const score = (correctCount / json.questions.length) * 100;
+    // Hitung skor total
+    const totalScore = correctCount * json.score_per_question;
+    const maxScore = json.questions.length * json.score_per_question;
 
     return {
-      score,
+      score: totalScore,
+      max_score: maxScore,
       correct_count: correctCount,
       total_questions: json.questions.length,
       results,
     };
+  }
+
+  // --- Logic Generator Soal ---
+  private static generateQuestions(
+    operation: 'addition' | 'subtraction' | 'multiplication' | 'division',
+    min: number,
+    max: number,
+    count: number
+  ): IMathQuestion[] {
+    const questions: IMathQuestion[] = [];
+
+    for (let i = 0; i < count; i++) {
+      let num1 = 0, num2 = 0, result = 0;
+      let symbol = '';
+
+      switch (operation) {
+        case 'addition':
+          num1 = this.randomInt(min, max);
+          num2 = this.randomInt(min, max);
+          result = num1 + num2;
+          symbol = '+';
+          break;
+        case 'subtraction':
+          // Pastikan hasil tidak negatif
+          num1 = this.randomInt(min, max);
+          num2 = this.randomInt(min, num1);
+          result = num1 - num2;
+          symbol = '-';
+          break;
+        case 'multiplication':
+          // Batasi angka agar hasil tidak terlalu besar
+          const limit = Math.max(min, 12); 
+          num1 = this.randomInt(min, limit); 
+          num2 = this.randomInt(min, limit);
+          result = num1 * num2;
+          symbol = '×';
+          break;
+        case 'division':
+          // Logika pembagian bersih (tanpa koma)
+          num2 = this.randomInt(2, 10); // Pembagi kecil
+          result = this.randomInt(min, max); // Hasil jawaban
+          num1 = num2 * result; // Angka yang dibagi
+          symbol = '÷';
+          break;
+      }
+
+      // Generate Pengecoh (Distractors)
+      const options = new Set<number>();
+      options.add(result);
+      
+      let attempt = 0;
+      while (options.size < 4 && attempt < 20) {
+        const offset = this.randomInt(1, 10) * (Math.random() < 0.5 ? 1 : -1);
+        const wrong = result + offset;
+        if (wrong >= 0 && wrong !== result) options.add(wrong);
+        attempt++;
+      }
+      
+      // Fallback jika loop macet
+      while(options.size < 4) options.add(this.randomInt(0, max + 20));
+
+      questions.push({
+        question_text: `${num1} ${symbol} ${num2}`,
+        correct_answer: result.toString(),
+        options: Array.from(options).sort(() => Math.random() - 0.5).map(String),
+      });
+    }
+    return questions;
+  }
+
+  private static randomInt(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 }
