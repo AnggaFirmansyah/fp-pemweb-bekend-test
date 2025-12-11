@@ -7,16 +7,17 @@ export const CreateMathGeneratorSchema = z.object({
   thumbnail_image: fileSchema({}).optional(),
   is_publish_immediately: StringToBooleanSchema.default(false),
   
-  // Settings untuk Logic Generator
-  operation: z.enum(['addition', 'subtraction', 'multiplication', 'division']),
-  min_number: z.coerce.number().min(0),
-  max_number: z.coerce.number().min(1),
-  question_count: z.coerce.number().min(1).max(20),
+  // Update: Tambah 'random'
+  operation: z.enum(['addition', 'subtraction', 'multiplication', 'division', 'random']),
   
+  // Update: Ganti min/max dengan difficulty
+  difficulty: z.enum(['easy', 'medium', 'hard']),
+  
+  // Update: Tambah theme
+  theme: z.string().default('candy'),
+
+  question_count: z.coerce.number().min(1).max(50).default(10),
   score_per_question: z.coerce.number().min(1).max(1000).default(10),
-}).refine((data) => data.max_number > data.min_number, {
-  message: "Maximum number must be greater than minimum number",
-  path: ["max_number"],
 });
 
 export type ICreateMathGenerator = z.infer<typeof CreateMathGeneratorSchema>;
